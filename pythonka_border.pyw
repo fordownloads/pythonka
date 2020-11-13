@@ -67,7 +67,7 @@ def scores():
     draw_rect((50, 55, 60), (0, 604, 600, 56))
     draw_text("Очки: " + str(apple_count), (14, 622), fontScore, False)
     if max_score > 0:
-        draw_text("Максимум: " + str(max_score), (110, 622), fontScore, False)
+        draw_text("Рекорд: " + str(max_score), (150, 622), fontScore, False)
 
 
 def get_max_score():
@@ -148,17 +148,23 @@ def leaderboard():
     draw_text("Лидеры", (64,18), fontScore, False, (20, 21, 24))
     sc_y = 72
     cnt = 0
-    draw_text("      Игрок       Очки      Поле       Задержка", (28, sc_y), fontScore, False, (20, 21, 24))
-    lead_sort = []
+    draw_text("Игрок", (64, sc_y), fontScore, False, (20, 21, 24))
+    draw_text("Очки", (280, sc_y), fontScore, False, (20, 21, 24))
+    #draw_text("Режим", (380, sc_y), fontScore, False, (20, 21, 24))
+    #lead_sort = []
 
-    for i in leaders:
-        if i['field'] == CELL and i['speed'] == SPEED_DEF:
-            lead_sort.append(i)
+    # for i in leaders:
+        # if i['field'] == CELL and i['speed'] == SPEED_DEF:
+            # lead_sort.append(i)
     
-    for i in sorted(lead_sort, key = lambda a: a['score'], reverse=True)[0:10]:
+    for i in sorted(leaders, key = lambda a: a['score'], reverse=True)[0:10]:
         sc_y += 32
         cnt += 1
-        draw_text(str(cnt) + "     " + i["user"] + "           " + str(i["score"]) + "             " + str(i["field"]) + "              " + str(i["speed"]), (28, sc_y), fontScore, False, (20, 21, 24))
+        draw_text(str(cnt), (24, sc_y), fontScore, False, (20, 21, 24))
+        draw_text(i["user"], (64, sc_y), fontScore, False, (20, 21, 24))
+        draw_text(str(i["score"]), (280, sc_y), fontScore, False, (20, 21, 24))
+        #draw_text(str(i["score"]), (280, sc_y), fontScore, False, (20, 21, 24))
+        #draw_text(str(i["field"]) + "/" + str(i["speed"]), (380, sc_y), fontScore, False, (20, 21, 24))
 
     pygame.display.update()
     while True:
@@ -181,7 +187,7 @@ def collision():
         if tuple(head) in body[1:] or head[0] >= 600 or head[1] >= 600 or head[0] < 0 or head[1] < 0:
             game = False
     if tuple(apple_xy) in body:
-        apple_count += 1
+        apple_count += CELL * (10 // (SPEED_DEF + 1))
         skip_kpop = True
         apple()
 
@@ -239,7 +245,7 @@ def draw_config():
 
 
 def show_config():
-    global CELL, SPEED_DEF, FIELD, DEBUG
+    global CELL, SPEED_DEF, FIELD, DEBUG, apple_count
     draw_config()
     need_key = True
     cell_presets = (2, 4, 6, 10, 12, 20, 25, 30, 50, 60, 75, 100)  # 8, 40
@@ -300,6 +306,7 @@ def show_config():
                         SPEED_DEF -= 1
                     else:
                         continue
+                    apple_count = 0
                     area()
                     draw_config()
         FPS.tick(10)
@@ -326,7 +333,7 @@ def run_game():
 
         move()
         collision()
-        win()
+        #win()
         pygame.display.update()
         FPS.tick(60)
 
@@ -343,7 +350,7 @@ def debug_mod(key):  # Точно не Debug
             SPEED_DEF += 1
 
     elif key[pygame.K_a]:
-        apple_count += 1
+        apple_count += CELL * (10 // (SPEED_DEF + 1))
         skip_kpop = True
         scores()
 
