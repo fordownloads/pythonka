@@ -1,15 +1,38 @@
+from os import environ
+from time import time
+from scores import *
 import pygame
 import random
-import os
-import ast
 
 pygame.init()
 
 PAD = 8
+CELL = 30
+FIELD = 20
+SPEED_DEF = 5
+DEBUG = False
+COLLISION_OFF = False
+FPS = pygame.time.Clock()
+USERNAME = environ["USERNAME"]
+
+apple_xy = [-1, -1]
+max_score = {
+    2: 0,
+    4: 0,
+    6: 0,
+    10: 0,
+    12: 0,
+    20: 0,
+    25: 0,
+    30: 0,
+    50: 0,
+    60: 0,
+    75: 0,
+    100: 0
+}
 
 display = pygame.display.set_mode((616, 670))
 pygame.display.set_caption("Pythonka")
-FPS = pygame.time.Clock()
 fontBig = pygame.font.Font(None, 36)
 fontSmall = pygame.font.Font(None, 16)
 fontScore = pygame.font.Font(None, 28)
@@ -18,26 +41,11 @@ net_surf = pygame.image.load('net.png')
 back_rect = back_surf.get_rect(center=(38, 35))
 net_rect = back_surf.get_rect(topleft=(358, 629))
 
-USERNAME = str(os.environ["USERNAME"])
-CELL = 30
-FIELD = 20
-SPEED_DEF = 5
-DEBUG = False
-COLLISION_OFF = False
-apple_xy = [-1, -1]
-leaders = []
-
 display.fill((50, 55, 60))
 
-try:
-    with open("scores.txt", "r") as file_scores:
-        leaders = ast.literal_eval(file_scores.read())    
-except Exception:
-    leaders = []
 
 def area():
-    
-    #Тень
+    # Тень
     draw_rect((44, 48, 52), (0, 0, 604, 604))
     draw_rect((37, 40, 44), (0, 0, 603, 603))
     draw_rect((30, 33, 36), (0, 0, 602, 602))
@@ -56,6 +64,7 @@ def area():
 def draw_rect(color, cord):
     pygame.draw.rect(display, color, (cord[0] + PAD, cord[1] + PAD, cord[2], cord[3]), 0, 4)
 
+
 def draw_text(text, cord, font=fontBig, shadow=True, color=(255, 255, 255)):
     if shadow:
         textObj2 = font.render(text, 1, (30, 140, 10))
@@ -63,19 +72,18 @@ def draw_text(text, cord, font=fontBig, shadow=True, color=(255, 255, 255)):
     textObj = font.render(text, 1, color)
     display.blit(textObj, (cord[0] + PAD, cord[1] + PAD))
 
+
 def scores():
     draw_rect((50, 55, 60), (0, 604, 600, 56))
     draw_text("Очки: " + str(apple_count), (14, 622), fontScore, False)
-    if max_score > 0:
-        draw_text("Рекорд: " + str(max_score), (150, 622), fontScore, False)
+    if max_score[CELL] > 0:
+        draw_text("Рекорд: " + str(max_score[CELL]), (150, 622), fontScore, False)
 
 
 def get_max_score():
     global max_score
-    if max_score == 0 and apple_count > 0 or apple_count > max_score:
-        max_score = apple_count
-        with open("scores.txt", "a") as file_scores:
-            file_scores.write(USERNAME + ": " + str(max_score) + "\n")
+    if max_score[CELL] == 0 and apple_count > 0 or apple_count > max_score[CELL]:
+        max_score[CELL] = apple_count
 
 
 def snake():  # Рисуем только 1, 2 и последнюю клетку змейки. Bust FPS 9999%
@@ -88,7 +96,7 @@ def move():
     global body, head, counter, xm, ym, skip_kpop, direct
 
     key = pygame.key.get_pressed()
-    
+
     if key[pygame.K_RIGHT] and direct != 1:
         xm = CELL
         ym = 0
@@ -111,7 +119,7 @@ def move():
     else:
         if DEBUG:  # Запускает debug
             debug_mod(key)
-        
+
         counter = 0
         head[0] += xm
         head[1] += ym
@@ -141,30 +149,30 @@ def apple():
     draw_rect((240, 20, 20), (apple_xy[0], apple_xy[1], CELL, CELL))
     scores()
 
+
+def get_time():
+    return str(round(time() - start_time, 2))
+
+
 def leaderboard():
+    cnt = 0
+    sc_y = 72
     draw_rect((250, 250, 250), (0, 0, 600, 652))
     draw_rect((240, 240, 240), (0, 0, 600, 54))
     display.blit(back_surf, back_rect)
-    draw_text("Лидеры", (64,18), fontScore, False, (20, 21, 24))
-    sc_y = 72
-    cnt = 0
+
+    draw_text("Лидеры", (64, 18), fontScore, False, (20, 21, 24))
     draw_text("Игрок", (64, sc_y), fontScore, False, (20, 21, 24))
     draw_text("Очки", (280, sc_y), fontScore, False, (20, 21, 24))
-    #draw_text("Режим", (380, sc_y), fontScore, False, (20, 21, 24))
-    #lead_sort = []
+    draw_text("Время", (430, sc_y), fontScore, False, (20, 21, 24))
 
-    # for i in leaders:
-        # if i['field'] == CELL and i['speed'] == SPEED_DEF:
-            # lead_sort.append(i)
-    
-    for i in sorted(leaders, key = lambda a: a['score'], reverse=True)[0:10]:
+    for score in get_scores(CELL, SPEED_DEF):
         sc_y += 32
         cnt += 1
         draw_text(str(cnt), (24, sc_y), fontScore, False, (20, 21, 24))
-        draw_text(i["user"], (64, sc_y), fontScore, False, (20, 21, 24))
-        draw_text(str(i["score"]), (280, sc_y), fontScore, False, (20, 21, 24))
-        #draw_text(str(i["score"]), (280, sc_y), fontScore, False, (20, 21, 24))
-        #draw_text(str(i["field"]) + "/" + str(i["speed"]), (380, sc_y), fontScore, False, (20, 21, 24))
+        draw_text(score["Username"], (64, sc_y), fontScore, False, (20, 21, 24))
+        draw_text(score["Score"], (280, sc_y), fontScore, False, (20, 21, 24))
+        draw_text(score["Time"], (430, sc_y), fontScore, False, (20, 21, 24))
 
     pygame.display.update()
     while True:
@@ -174,7 +182,8 @@ def leaderboard():
             if i.type == pygame.MOUSEBUTTONDOWN and i.button == 1 and i.pos[1] < 62 and i.pos[0] < 64:
                 return
         FPS.tick(2)
-        
+
+
 def win():
     global game
     if ((600 // CELL) ** 2) - 3 == apple_count:
@@ -187,7 +196,7 @@ def collision():
         if tuple(head) in body[1:] or head[0] >= 600 or head[1] >= 600 or head[0] < 0 or head[1] < 0:
             game = False
     if tuple(apple_xy) in body:
-        apple_count += CELL * (10 // (SPEED_DEF + 1))
+        apple_count += 1
         skip_kpop = True
         apple()
 
@@ -204,7 +213,7 @@ def draw_config():
         draw_text(str(CELL), (544, 630), fontScore, False)
     else:
         draw_text(str(CELL), (538, 630), fontScore, False)
-        
+
     draw_text(str(SPEED_DEF), (436, 630), fontScore, False)
 
     draw_rect((74, 82, 89), (506, 630, 18, 18))
@@ -216,7 +225,7 @@ def draw_config():
     draw_rect((74, 82, 89), (468, 630, 18, 18))
     draw_text("+", (404, 633), fontSmall, False)
     draw_text("-", (475, 633), fontSmall, False)
-    
+
     draw_rect((74, 82, 89), (344, 614, 34, 34))
     display.blit(net_surf, net_rect)
 
@@ -226,7 +235,7 @@ def draw_config():
         draw_text('Pythonka', (245, 270))
         draw_text('Copyright © 2020, Vnukov D., Prodeus D., Perfilev D.', (162, 550), fontSmall)
 
-    elif max_score >= ((600 // CELL) ** 2) - 3:  # Отрисовка Выигрышного текста
+    elif max_score[CELL] >= ((600 // CELL) ** 2) - 3:  # Отрисовка Выигрышного текста
         winfont = pygame.font.Font(None, 144)
         wintext1 = winfont.render('FAGGOT', 1, (199, 55, 30))
         wintext2 = winfont.render('WIN', 1, (199, 55, 30))
@@ -234,18 +243,18 @@ def draw_config():
         place2 = wintext2.get_rect(center=(300, 300))
         display.blit(wintext1, place1)
         display.blit(wintext2, place2)
-        max_score = 0
+        max_score[CELL] = 0
 
     else:
         draw_text('Game Over', (232, 270))
-        
+
     draw_text('Нажмите Enter для начала игры', (107, 306))
 
     pygame.display.update()
 
 
 def show_config():
-    global CELL, SPEED_DEF, FIELD, DEBUG, apple_count
+    global CELL, SPEED_DEF, FIELD, DEBUG
     draw_config()
     need_key = True
     cell_presets = (2, 4, 6, 10, 12, 20, 25, 30, 50, 60, 75, 100)  # 8, 40
@@ -306,14 +315,13 @@ def show_config():
                         SPEED_DEF -= 1
                     else:
                         continue
-                    apple_count = 0
                     area()
                     draw_config()
         FPS.tick(10)
 
 
 def run_game():
-    global game
+    global game, start_time
     need_key = True
     area()
     apple()
@@ -323,6 +331,7 @@ def run_game():
                 quit()
             elif need_key and event.type == pygame.KEYDOWN:  # Ждем кнопку
                 need_key = False
+                start_time = time()
 
         snake()
 
@@ -333,7 +342,7 @@ def run_game():
 
         move()
         collision()
-        #win()
+        win()
         pygame.display.update()
         FPS.tick(60)
 
@@ -350,7 +359,7 @@ def debug_mod(key):  # Точно не Debug
             SPEED_DEF += 1
 
     elif key[pygame.K_a]:
-        apple_count += CELL * (10 // (SPEED_DEF + 1))
+        apple_count += 1
         skip_kpop = True
         scores()
 
@@ -364,11 +373,11 @@ def debug_mod(key):  # Точно не Debug
 
 
 area()
+start_time = 0
 apple_count = 0
-max_score = 0
 while True:
     show_config()
-    
+
     apple_count = 0
     i = 0
     xm = CELL
@@ -381,6 +390,4 @@ while True:
     game = True
     run_game()
     get_max_score()
-    leaders.append({"user": USERNAME, "score": apple_count, "field": CELL, "speed": SPEED_DEF})
-    with open("scores.txt", "w") as file_scores:
-        file_scores.write(str(leaders))
+    add_score(USERNAME, apple_count, CELL, SPEED_DEF, get_time())
